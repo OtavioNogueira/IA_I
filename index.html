@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atividade de Redes Neurais - Perceptron</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Outfit:wght@500;700&display=swap" rel="stylesheet">
+    <script type="module">
+      import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+      mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+    </script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --accent: #3b82f6;
+            --accent-glow: rgba(59, 130, 246, 0.5);
+            --success: #10b981;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(139, 92, 246, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            line-height: 1.6;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1, h2, h3 {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            background: linear-gradient(to right, #60a5fa, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.1rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 1rem;
+            padding: 2rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: fadeInUp 0.8s ease-out forwards;
+            opacity: 0;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 0 20px var(--accent-glow);
+        }
+
+        .card:nth-child(1) { animation-delay: 0.1s; }
+        .card:nth-child(2) { animation-delay: 0.2s; }
+        .card:nth-child(3) { animation-delay: 0.3s; }
+        .card:nth-child(4) { animation-delay: 0.4s; }
+
+        .card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 1.5rem;
+            color: #fff;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid var(--glass-border);
+            padding-bottom: 0.75rem;
+        }
+
+        .card h2::before {
+            content: '';
+            display: block;
+            width: 12px;
+            height: 12px;
+            background: var(--accent);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent);
+        }
+
+        .description {
+            color: var(--text-muted);
+            margin-bottom: 1rem;
+            text-align: justify;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+            border-radius: 0.5rem;
+            margin-top: 1rem;
+            border: 1px solid var(--glass-border);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        th, td {
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        th {
+            background: rgba(0,0,0,0.2);
+            font-weight: 600;
+            color: #cbd5e1;
+            font-size: 0.9rem;
+            letter-spacing: 0.05em;
+        }
+
+        tbody tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+
+        .class-c1 { color: var(--danger); font-weight: 600; }
+        .class-c2 { color: var(--success); font-weight: 600; }
+
+        .answer-block {
+            margin-bottom: 1.5rem;
+        }
+        .answer-block:last-child {
+            margin-bottom: 0;
+        }
+        
+        .answer-block h3 {
+            font-size: 1.1rem;
+            color: #e2e8f0;
+            margin-bottom: 0.5rem;
+        }
+
+        .answer-block p {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--accent);
+            color: var(--text-muted);
+        }
+
+        @keyframes fadeInDown {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>Classificação com Perceptron</h1>
+        <p>Atividade Resolvida: Destilação Fracionada de Petróleo</p>
+    </div>
+
+    <div class="grid">
+        <!-- Enunciado -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>Contexto do Problema</h2>
+            <p class="description">
+                A partir da análise de um processo de destilação fracionada de petróleo observou-se que determinado óleo poderia ser classificado em duas classes de pureza {C1 e C2} a partir da medição de três grandezas {x1, x2 e x3} que representam propriedades físico-químicas.
+                A classificação é feita com um <strong>Perceptron</strong> usando a regra de Hebb (aprendizado supervisionado) com taxa de aprendizagem $\eta = 0.01$, inicializando os pesos com valores aleatórios entre 0 e 1.
+            </p>
+            <div style="text-align: center; margin-top: 1rem;">
+                <div class="mermaid">
+                    graph LR
+                        X0(("x0 = 1 (Bias)")) -->|w0| S((Σ))
+                        X1(("x1")) -->|w1| S
+                        X2(("x2")) -->|w2| S
+                        X3(("x3")) -->|w3| S
+                        S --> F["Sinal(v)"]
+                        F --> Y(("y"))
+                        style S fill:#1e293b,stroke:#3b82f6,stroke-width:2px,color:#fff
+                        style Y fill:#10b981,stroke:#fff,stroke-width:2px,color:#fff
+                </div>
+            </div>
+        </div>
+
+        <!-- Atividades 1 e 2 -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>1 e 2. Treinamentos Realizados</h2>
+            <p class="description">Foram executados 5 treinamentos independentes até o erro chegar a zero na base de dados de treinamento. Em cada execução, os pesos iniciais foram gerados aleatoriamente entre 0 e 1.</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Treinamento</th>
+                            <th>Épocas</th>
+                            <th>Bias ($w_0$)</th>
+                            <th>$w_1$</th>
+                            <th>$w_2$</th>
+                            <th>$w_3$</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>T1</td><td>401</td><td>3.0962</td><td>1.5763</td><td>2.5009</td><td>-0.7385</td></tr>
+                        <tr><td>T2</td><td>386</td><td>3.1050</td><td>1.5580</td><td>2.4874</td><td>-0.7390</td></tr>
+                        <tr><td>T3</td><td>424</td><td>3.1365</td><td>1.6047</td><td>2.5198</td><td>-0.7464</td></tr>
+                        <tr><td>T4</td><td>358</td><td>3.0413</td><td>1.5454</td><td>2.4485</td><td>-0.7256</td></tr>
+                        <tr><td>T5</td><td>327</td><td>2.9099</td><td>1.4042</td><td>2.4142</td><td>-0.6965</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Atividade 3 -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>3. Classificação das Novas Amostras</h2>
+            <p class="description">O perceptron treinado foi aplicado nas novas amostras (dados de teste). Como as 5 execuções convergiram corretamente para um plano de separação global equivalente, a classificação resultante é idêntica em todos os modelos.</p>
+            
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Amostra</th>
+                            <th>x1</th>
+                            <th>x2</th>
+                            <th>x3</th>
+                            <th>y(T1)</th>
+                            <th>y(T2)</th>
+                            <th>y(T3)</th>
+                            <th>y(T4)</th>
+                            <th>y(T5)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>1</td><td>-0.3565</td><td>0.0620</td><td>5.9891</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td></tr>
+                        <tr><td>2</td><td>-0.7842</td><td>1.1267</td><td>5.5912</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>3</td><td>0.3012</td><td>0.5611</td><td>5.8234</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>4</td><td>0.7757</td><td>1.0648</td><td>8.0677</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>5</td><td>0.1570</td><td>0.8028</td><td>6.3040</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>6</td><td>-0.7014</td><td>1.0316</td><td>3.6005</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>7</td><td>0.3748</td><td>0.1536</td><td>6.1537</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td></tr>
+                        <tr><td>8</td><td>-0.6920</td><td>0.9404</td><td>4.4058</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td><td class="class-c2">1</td></tr>
+                        <tr><td>9</td><td>-1.3970</td><td>0.7141</td><td>4.9263</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td></tr>
+                        <tr><td>10</td><td>-1.8842</td><td>-0.2805</td><td>1.2548</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td><td class="class-c1">-1</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Questões Discursivas -->
+        <div class="card" style="grid-column: 1 / -1;">
+            <h2>4 e 5. Questões Teóricas</h2>
+            
+            <div class="answer-block">
+                <h3>4. Explique por que o número de épocas de treinamento varia a cada vez que executamos o treinamento.</h3>
+                <p>
+                    O algoritmo do Perceptron realiza uma busca no espaço para encontrar um "hiperplano" (uma reta/plano no espaço vetorial) que consiga separar perfeitamente as classes C1 e C2. 
+                    <br><br>
+                    O tempo que ele leva para encontrar esse plano depende unicamente de onde ele começou a busca. Como inicializamos o vetor de pesos com valores aleatórios diferentes a cada execução, o ponto de partida muda. Isso faz com que a trajetória de ajustes e a quantidade de passos (épocas) até o erro zerar variem significativamente.
+                </p>
+            </div>
+
+            <div class="answer-block">
+                <h3>5. Qual a principal limitação do perceptron quando aplicado em problemas de classificação?</h3>
+                <p>
+                    A principal limitação do Perceptron clássico (de camada única) é que ele <strong>só consegue resolver problemas que sejam linearmente separáveis</strong>.
+                    <br><br>
+                    Isso significa que ele só terá sucesso se for possível traçar um limite reto (uma reta no plano 2D, ou um hiperplano em n-dimensões) dividindo as duas classes sem sobreposição. Se os dados possuírem uma distribuição não-linear (como no famoso problema lógico do XOR), o perceptron entrará em um loop infinito, ajustando os pesos sem parar, pois nunca conseguirá alcançar o erro igual a zero.
+                </p>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+</body>
+</html>
