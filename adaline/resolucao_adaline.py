@@ -1,7 +1,7 @@
 import random
 import matplotlib.pyplot as plt
 
-# Dados de treinamento
+# Dados de treinamentoj
 dados_treino = [
     [0.4329, -1.3719, 0.7022, -0.8535, 1.0000],
     [0.3024, 0.2286, 0.8630, 2.7909, -1.0000],
