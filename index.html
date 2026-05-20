@@ -279,6 +279,8 @@
         <button class="tab-btn" onclick="openTab(event, 'pmc1')">PMC 1</button>
         <button class="tab-btn" onclick="openTab(event, 'pmc2')">PMC 2</button>
         <button class="tab-btn" onclick="openTab(event, 'pmc3')">PMC 3</button>
+        <button class="tab-btn" onclick="openTab(event, 'rbf1')">RBF 1</button>
+        <button class="tab-btn" onclick="openTab(event, 'rbf2')">RBF 2</button>
     </div>
 
     <!-- TAB PERCEPTRON -->
@@ -897,6 +899,185 @@
                     <p>
                         O Levenberg-Marquardt atua misturando o método do Gradiente Descendente e o método de Gauss-Newton. Em vez de calcular derivadas segundas complexas (Matriz Hessiana), ele as aproxima utilizando a Matriz Jacobiana ($H pprox J^T J$). A regra de atualização possui um parâmetro de amortecimento ($\mu$) que regula entre se comportar como Gradiente Descendente (quando longe do mínimo) e Gauss-Newton (quando muito próximo ao mínimo).
                         <strong>Vantagem:</strong> É indiscutivelmente o algoritmo de treinamento mais rápido que existe para redes neurais de pequeno a médio porte (como a maioria das PMCs). Sua convergência é extremamente acelerada perto da solução ótima. A principal desvantagem é o alto custo de memória para armazenar e inverter a matriz Jacobiana em redes muito grandes.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB RBF 1 -->
+    <div id="rbf1" class="tab-content">
+        <div class="grid">
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Contexto do Problema (Radiação)</h2>
+                <p class="description">
+                    A verificação da presença de radiação em determinados compostos nucleares pode ser feita através da análise da concentração de duas variáveis definidas por x₁ e x₂. A partir de 50 situações (40 treino, 10 teste), foi treinada uma rede <strong>RBF (Radial Basis Function)</strong> para classificar a presença (+1) ou ausência (-1) de radiação.
+                </p>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>1. Treinamento da Camada Escondida (K-Means)</h2>
+                <p class="description">Foi aplicado o algoritmo <i>k-means</i> (k=2) utilizando apenas os padrões da classe 1 (presença de radiação).</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Cluster</th><th>Centro (c₁, c₂)</th><th>Variância</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>(0.1648, 0.6121)</td><td>0.029806</td></tr>
+                            <tr><td>2</td><td>(0.3989, 0.1571)</td><td>0.038460</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>2. Treinamento da Camada de Saída (Regra Delta)</h2>
+                <p class="description">Regra Delta com taxa de aprendizagem $\eta = 0.01$ e precisão de $10^{-7}$. Convergência atingida em 328 épocas com EQM = 0.234239.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr><th>Peso</th><th>Valor</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>W2_(1,0) (Bias)</td><td>-1.002650</td></tr>
+                            <tr><td>W2_(1,1)</td><td>2.378030</td></tr>
+                            <tr><td>W2_(1,2)</td><td>2.697702</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>3 e 4. Validação com Conjunto de Teste</h2>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Amostra</th><th>x₁</th><th>x₂</th><th>d</th><th>y (Rede)</th><th>y^(pós)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1</td><td>0.8705</td><td>0.9329</td><td>-1</td><td>-1.0025</td><td class="class-c1">-1</td></tr>
+                            <tr><td>2</td><td>0.0388</td><td>0.2703</td><td>1</td><td>-0.3231</td><td class="class-c1">-1</td></tr>
+                            <tr><td>3</td><td>0.8236</td><td>0.4458</td><td>-1</td><td>-0.9140</td><td class="class-c1">-1</td></tr>
+                            <tr><td>4</td><td>0.7075</td><td>0.1502</td><td>1</td><td>-0.2201</td><td class="class-c1">-1</td></tr>
+                            <tr><td>5</td><td>0.9587</td><td>0.8663</td><td>-1</td><td>-1.0026</td><td class="class-c1">-1</td></tr>
+                            <tr><td>6</td><td>0.6115</td><td>0.9365</td><td>-1</td><td>-0.9878</td><td class="class-c1">-1</td></tr>
+                            <tr><td>7</td><td>0.3534</td><td>0.3646</td><td>1</td><td>0.9665</td><td class="class-c2">1</td></tr>
+                            <tr><td>8</td><td>0.3268</td><td>0.2766</td><td>1</td><td>1.3232</td><td class="class-c2">1</td></tr>
+                            <tr><td>9</td><td>0.6129</td><td>0.4518</td><td>-1</td><td>-0.4682</td><td class="class-c1">-1</td></tr>
+                            <tr><td>10</td><td>0.9948</td><td>0.4962</td><td>-1</td><td>-0.9966</td><td class="class-c1">-1</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(255,255,255,0.05);">
+                                <td colspan="6" style="font-weight:bold; text-align:center; color: var(--accent); font-size: 1.2rem;">Taxa de Acerto: 80.00%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>5. Estratégias de Melhoria</h2>
+                <div class="answer-block">
+                    <p>
+                        Para aumentar a taxa de acerto desta RBF (que errou 2 amostras da classe 1), poderíamos:
+                        <br><br>
+                        <strong>1. Aumentar o número de centros (k > 2):</strong> Com mais gaussianas espalhadas no espaço da classe 1, a rede teria mais flexibilidade geométrica para envelopar todos os pontos positivos.
+                        <br>
+                        <strong>2. Usar K-Means global:</strong> Em vez de colocar gaussianas apenas na classe positiva, poderíamos criar centros representando a classe negativa também, modelando ativamente o "vazio" e o "ruído".
+                        <br>
+                        <strong>3. Alterar a métrica de espalhamento (Variância):</strong> Ao invés da variância direta de cada cluster, poderíamos aplicar a heurística de espalhamento $d_{max}/\sqrt{2K}$, cobrindo melhor as lacunas entre os clusters e capturando mais efetivamente amostras periféricas (como as amostras 2 e 4 do teste, que caíram numa "zona fria" onde a ativação das duas gaussianas não foi suficiente para superar o bias fortemente negativo).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TAB RBF 2 -->
+    <div id="rbf2" class="tab-content">
+        <div class="grid">
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Contexto do Problema (Injeção Eletrônica)</h2>
+                <p class="description">
+                    O problema propõe o mapeamento não-linear da quantidade de gasolina (y) a ser injetada em um motor automotivo com base em 3 variáveis (x₁, x₂, x₃). A aproximação funcional foi realizada avaliando três topologias RBF: <strong>Rede 1</strong> (N1=5), <strong>Rede 2</strong> (N1=10) e <strong>Rede 3</strong> (N1=15).
+                </p>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>1 e 2. Treinamentos Realizados (Regra Delta)</h2>
+                <p class="description">A camada de saída foi treinada 3 vezes para cada topologia. Por ser uma otimização estritamente convexa na saída da RBF, os três treinamentos convergiram para os mesmos valores mínimos locais/globais de EQM.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Treinamento</th>
+                                <th colspan="2">Rede 1 (N1=5)</th>
+                                <th colspan="2">Rede 2 (N1=10)</th>
+                                <th colspan="2">Rede 3 (N1=15)</th>
+                            </tr>
+                            <tr>
+                                <th></th><th>EQM</th><th>Épocas</th><th>EQM</th><th>Épocas</th><th>EQM</th><th>Épocas</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>1º (T1)</td><td>0.074238</td><td>329</td><td>0.071728</td><td>456</td><td>0.070368</td><td>859</td></tr>
+                            <tr><td>2º (T2)</td><td>0.074238</td><td>316</td><td>0.071728</td><td>558</td><td>0.070368</td><td>837</td></tr>
+                            <tr><td>3º (T3)</td><td>0.074238</td><td>294</td><td>0.071728</td><td>541</td><td>0.070368</td><td>895</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>3. Validação (Conjunto de Teste)</h2>
+                <p class="description">Os 3 treinamentos em cada topologia atingiram as mesmas saídas dadas as mesmas métricas e convergência global.</p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Amostra</th><th>x₁</th><th>x₂</th><th>x₃</th><th>Desejado (d)</th><th>y Rede 1</th><th>y Rede 2</th><th>y Rede 3</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>01</td><td>0.5102</td><td>0.7464</td><td>0.0860</td><td>0.5965</td><td>0.4607</td><td>0.4132</td><td>0.4416</td></tr>
+                            <tr><td>02</td><td>0.8401</td><td>0.4490</td><td>0.2719</td><td>0.6790</td><td>0.4637</td><td>0.4142</td><td>0.4407</td></tr>
+                            <tr><td>03</td><td>0.1283</td><td>0.1882</td><td>0.7253</td><td>0.4662</td><td>0.4576</td><td>0.4122</td><td>0.4424</td></tr>
+                            <tr><td>04</td><td>0.2299</td><td>0.1524</td><td>0.7353</td><td>0.5012</td><td>0.4584</td><td>0.4125</td><td>0.4422</td></tr>
+                            <tr><td>05</td><td>0.3209</td><td>0.6229</td><td>0.5233</td><td>0.6810</td><td>0.4592</td><td>0.4128</td><td>0.4419</td></tr>
+                            <tr><td>06</td><td>0.8203</td><td>0.0682</td><td>0.4260</td><td>0.5643</td><td>0.4635</td><td>0.4141</td><td>0.4408</td></tr>
+                            <tr><td>07</td><td>0.3471</td><td>0.8889</td><td>0.1564</td><td>0.5875</td><td>0.4593</td><td>0.4128</td><td>0.4419</td></tr>
+                            <tr><td>08</td><td>0.5762</td><td>0.8292</td><td>0.4116</td><td>0.7853</td><td>0.4613</td><td>0.4134</td><td>0.4414</td></tr>
+                            <tr><td>09</td><td>0.9053</td><td>0.6245</td><td>0.5264</td><td>0.8506</td><td>0.4643</td><td>0.4145</td><td>0.4406</td></tr>
+                            <tr><td>10</td><td>0.8149</td><td>0.0396</td><td>0.6227</td><td>0.6165</td><td>0.4635</td><td>0.4141</td><td>0.4408</td></tr>
+                            <tr><td>11</td><td>0.1016</td><td>0.6382</td><td>0.3173</td><td>0.4957</td><td>0.4573</td><td>0.4122</td><td>0.4424</td></tr>
+                            <tr><td>12</td><td>0.9108</td><td>0.2139</td><td>0.4641</td><td>0.6625</td><td>0.4644</td><td>0.4145</td><td>0.4406</td></tr>
+                            <tr><td>13</td><td>0.2245</td><td>0.0971</td><td>0.6136</td><td>0.4402</td><td>0.4583</td><td>0.4125</td><td>0.4422</td></tr>
+                            <tr><td>14</td><td>0.6423</td><td>0.3229</td><td>0.8567</td><td>0.7663</td><td>0.4619</td><td>0.4136</td><td>0.4412</td></tr>
+                            <tr><td>15</td><td>0.5252</td><td>0.6529</td><td>0.5729</td><td>0.7893</td><td>0.4609</td><td>0.4133</td><td>0.4415</td></tr>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background: rgba(255,255,255,0.05); color: var(--accent); font-weight: bold; text-align: center;">
+                                <td colspan="5">Erro Relativo Médio (%)</td><td>24.78%</td><td>32.03%</td><td>27.43%</td>
+                            </tr>
+                            <tr style="background: rgba(255,255,255,0.05); color: var(--warning); font-weight: bold; text-align: center;">
+                                <td colspan="5">Variância do Erro (%)</td><td>193.71%</td><td>181.99%</td><td>209.70%</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>5. Topologia mais Adequada</h2>
+                <div class="answer-block">
+                    <p>
+                        Baseado nas evidências empíricas acima, a <strong>Rede 1 (com N1 = 5)</strong> é a mais adequada para este problema.
+                        <br><br>
+                        <strong>Justificativa:</strong> Apesar da Rede 3 ter obtido o menor Erro Quadrático Médio (EQM = 0.0703) na fase de treinamento em comparação à Rede 1 (EQM = 0.0742), o desempenho real no conjunto cego de validação revela a superioridade da Rede 1, que obteve um erro relativo inferior (24.78% contra 27.43% da Rede 3). 
+                        <br><br>
+                        Isso evidencia que o excesso de neurônios radiais nas redes 2 e 3 está causando um grau de <strong>overfitting (superajuste)</strong>, ou seja, as redes com N1=10 e N1=15 estão decorando peculiaridades ou ruídos do conjunto de treinamento e perdendo levemente sua capacidade de generalização e aproximação suave. A topologia mínima de 5 clusters demonstrou ter a capacidade ideal de capturar a complexidade da série sem sobreajustá-la.
                     </p>
                 </div>
             </div>
