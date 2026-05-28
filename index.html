@@ -281,6 +281,8 @@
         <button class="tab-btn" onclick="openTab(event, 'pmc3')">PMC 3</button>
         <button class="tab-btn" onclick="openTab(event, 'rbf1')">RBF 1</button>
         <button class="tab-btn" onclick="openTab(event, 'rbf2')">RBF 2</button>
+        <button class="tab-btn" onclick="openTab(event, 'hopfield')">Hopfield</button>
+        <button class="tab-btn" onclick="openTab(event, 'kohonen')">Kohonen</button>
     </div>
 
     <!-- TAB PERCEPTRON -->
@@ -1082,6 +1084,1026 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    <!-- TAB HOPFIELD -->
+    <div id="hopfield" class="tab-content">
+        <style>
+            /* Hopfield Specific Styling */
+            .hopfield-simulator {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin-top: 1.5rem;
+            }
+
+            .hopfield-grid-container {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 1.5rem;
+                border-radius: 1rem;
+                border: 1px solid var(--glass-border);
+                margin-bottom: 1.5rem;
+                text-align: center;
+                width: 100%;
+                max-width: 500px;
+            }
+
+            .hopfield-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 35px);
+                grid-gap: 6px;
+                justify-content: center;
+                margin: 1.5rem auto;
+                background: #0b0f19;
+                padding: 12px;
+                border-radius: 12px;
+                width: fit-content;
+                box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+                transition: box-shadow 0.3s ease;
+            }
+
+            .hopfield-cell {
+                width: 35px;
+                height: 35px;
+                background-color: #1e293b;
+                border: 1px solid rgba(255, 255, 255, 0.08);
+                border-radius: 6px;
+                cursor: pointer;
+                transition: all 0.15s ease;
+            }
+
+            .hopfield-cell.active {
+                background-color: #3b82f6;
+                box-shadow: 0 0 15px rgba(59, 130, 246, 0.7);
+                border-color: #60a5fa;
+            }
+
+            .hopfield-cell:hover {
+                filter: brightness(1.25);
+                border-color: rgba(255, 255, 255, 0.4);
+            }
+
+            .hopfield-controls {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                justify-content: center;
+                margin-bottom: 1.5rem;
+            }
+
+            .hopfield-btn {
+                background: var(--glass-bg);
+                border: 1px solid var(--glass-border);
+                color: var(--text-main);
+                padding: 0.6rem 1.2rem;
+                border-radius: 0.5rem;
+                cursor: pointer;
+                font-family: 'Outfit', sans-serif;
+                font-size: 0.9rem;
+                font-weight: 600;
+                transition: all 0.25s ease;
+            }
+
+            .hopfield-btn:hover:not(:disabled) {
+                background: rgba(255, 255, 255, 0.15);
+                border-color: rgba(255, 255, 255, 0.3);
+            }
+
+            .hopfield-btn.primary {
+                background: var(--accent);
+                border-color: var(--accent);
+            }
+
+            .hopfield-btn.primary:hover:not(:disabled) {
+                background: #2563eb;
+                box-shadow: 0 0 12px var(--accent-glow);
+            }
+
+            .hopfield-btn:disabled {
+                opacity: 0.4;
+                cursor: not-allowed;
+            }
+
+            .hopfield-patterns-preview {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 1rem;
+            }
+
+            .hopfield-pattern-card {
+                background: rgba(0,0,0,0.3);
+                padding: 10px;
+                border-radius: 8px;
+                border: 1px solid var(--glass-border);
+                cursor: pointer;
+                transition: all 0.2s ease;
+                text-align: center;
+            }
+
+            .hopfield-pattern-card:hover {
+                transform: scale(1.05);
+                border-color: var(--accent);
+            }
+
+            .hopfield-small-grid {
+                display: grid;
+                grid-template-columns: repeat(5, 10px);
+                grid-gap: 2px;
+                background: #090d16;
+                padding: 4px;
+                border-radius: 4px;
+                width: fit-content;
+                margin: 0.5rem auto 0;
+            }
+
+            .hopfield-small-cell {
+                width: 10px;
+                height: 10px;
+                background-color: #1e293b;
+                border-radius: 1px;
+            }
+
+            .hopfield-small-cell.active {
+                background-color: #3b82f6;
+            }
+
+            .hopfield-status-box {
+                margin-top: 0.5rem;
+                font-size: 0.9rem;
+                color: var(--text-muted);
+                height: 20px;
+            }
+        </style>
+
+        <div class="grid">
+            <!-- Contexto do Problema Hopfield -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Contexto do Problema (Memória Associativa)</h2>
+                <p class="description">
+                    Uma rede de Hopfield com <strong>45 neurônios</strong> foi implementada para atuar como memória associativa para armazenar e recuperar 4 padrões de dígitos representados em imagens $9 \times 5$ pixels.
+                    Durante a transmissão, cerca de 20% dos pixels são corrompidos por ruído. O modelo calcula a matriz de pesos por meio da Regra de Hebb (produto externo com diagonal zerada) e atualiza seus estados de forma assíncrona até convergir.
+                </p>
+
+            </div>
+
+            <!-- Simulador Interativo -->
+            <div class="card" style="grid-column: 1 / 2;">
+                <h2>Simulador Interativo Dinâmico</h2>
+                <p class="description">
+                    Utilize os botões para carregar um padrão original, adicione ruído de 20% (9 pixels invertidos aleatoriamente) ou limpe a grade e desenhe seu próprio padrão alternando os pixels (clique em qualquer quadrado). Em seguida, clique em **Recuperar Imagem** para assistir à dinâmica de rede.
+                </p>
+
+                <div class="hopfield-simulator">
+                    <div class="hopfield-controls">
+                        <button class="hopfield-btn" onclick="hopfieldLoadPreset(1)">Dígito 1</button>
+                        <button class="hopfield-btn" onclick="hopfieldLoadPreset(2)">Dígito 2</button>
+                        <button class="hopfield-btn" onclick="hopfieldLoadPreset(3)">Dígito 3</button>
+                        <button class="hopfield-btn" onclick="hopfieldLoadPreset(4)">Dígito 4</button>
+                    </div>
+
+                    <div class="hopfield-grid-container">
+                        <div class="hopfield-grid" id="hopfield-simulator-grid"></div>
+                        <div class="hopfield-status-box" id="hopfield-status">Pronto</div>
+                    </div>
+
+                    <div class="hopfield-controls">
+                        <button class="hopfield-btn" onclick="hopfieldAddSimulatedNoise()">Inverter 20% (Ruído)</button>
+                        <button class="hopfield-btn" onclick="hopfieldClearGrid()">Limpar Grade</button>
+                        <button class="hopfield-btn primary" onclick="hopfieldRunRecovery()">Recuperar Imagem</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Padrões e Bacia de Atração -->
+            <div class="card" style="grid-column: 2 / 3;">
+                <h2>Padrões Memorizados pela Rede</h2>
+                <p class="description">
+                    Estes são os 4 padrões estáveis (dígitos em grade de $9 \times 5$) gravados na matriz de pesos da rede de Hopfield. Qualquer entrada ruidosa inserida no simulador tende a convergir para o padrão que tiver a maior bacia de atração.
+                </p>
+
+                <div class="hopfield-patterns-preview" id="hopfield-preview-container"></div>
+
+                <h2 style="margin-top: 2rem;">Aumento Excessivo de Ruído</h2>
+                <div class="answer-box" style="margin-top: 1rem;">
+                    <div class="answer-block">
+                        <p style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border-left: 4px solid var(--accent); color: var(--text-muted); font-size: 0.9rem;">
+                            <strong>1. Divergência para Estados Espúrios:</strong> A rede de Hopfield possui mínimos locais que não correspondem aos padrões memorizados (estados espúrios). Com ruído excessivo, a rede tende a convergir para essas misturas indesejadas de dígitos.
+                            <br><br>
+                            <strong>2. Atração por Padrões Invertidos:</strong> A rede de Hopfield possui simetria de energia ($E(x) = E(-x)$). Se mais de 50% dos pixels forem corrompidos, a rede convergirá para a imagem em negativo (inversa) do padrão.
+                            <br><br>
+                            <strong>3. Limite de Capacidade:</strong> O limite de armazenamento clássico da rede é de $\approx 0.138 \times N$. Com $N=45$, o limite prático é de cerca de 6 padrões. Com 4 padrões que são altamente correlacionados (como os dígitos 2, 3 e 4), as bacias de atração são rasas e o ruído excessivo causa falhas frequentes na convergência.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela com as 12 Simulações do Trabalho -->
+            <div class="card" style="grid-column: 1 / -1; overflow-x: auto;">
+                <h2>Simulações Práticas Realizadas (12 Situações)</h2>
+                <p class="description">
+                    Resultados obtidos executando a simulação de 12 cenários de ruído de 20% (3 testes independentes para cada padrão). 
+                    <strong style="color: var(--accent);">Dica:</strong> Clique em qualquer linha da tabela para carregar automaticamente a imagem ruidosa daquele teste no simulador interativo acima!
+                </p>
+                <div class="table-container">
+                    <table style="font-size: 0.9em;">
+                        <thead>
+                            <tr>
+                                <th>Nº Teste</th>
+                                <th>Padrão</th>
+                                <th>Simulação</th>
+                                <th>Ruído</th>
+                                <th>Iterações</th>
+                                <th>Convergido</th>
+                                <th>Resultado Final</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hopfield-simulations-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Dados estáticos das simulações gerados em Python
+            const HOPFIELD_SIMULATIONS = [
+                { padrao_id: 1, simulacao_id: 1, original: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], distorcido: [-1, 1, 1, 1, -1, -1, -1, -1, -1, -1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, 1, 1, -1], recuperado: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 1, simulacao_id: 2, original: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], distorcido: [-1, -1, 1, 1, -1, -1, 1, 1, 1, 1, -1, -1, 1, -1, -1, -1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, 1, -1, 1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, 1], recuperado: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 1, simulacao_id: 3, original: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], distorcido: [-1, 1, 1, 1, 1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, -1, 1, -1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1], recuperado: [-1, -1, 1, 1, -1, -1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 2, simulacao_id: 1, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, 1, 1, -1, 1, 1, -1, 1, 1, 1, 1, -1, -1, 1], recuperado: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 1.0, 1.0, 1.0, -1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, 1], iteracoes: 3, convergido: true, sucesso: false },
+                { padrao_id: 2, simulacao_id: 2, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 1, -1, -1, -1, -1, 1, -1, 1, 1, -1, 1, -1, 1, 1, -1, -1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, -1, 1, 1, 1], recuperado: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 2, simulacao_id: 3, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, -1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1], recuperado: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 3, simulacao_id: 1, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1, 1, 1, -1, 1, 1, -1, 1, -1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1], recuperado: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 3, simulacao_id: 2, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, 1, 1, -1, 1, -1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, 1, 1, 1], recuperado: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 3, simulacao_id: 3, original: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], distorcido: [1, 1, -1, -1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, -1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, 1, -1, 1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, 1], recuperado: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 4, simulacao_id: 1, original: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], distorcido: [1, 1, -1, 1, 1, -1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, -1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, -1, 1, 1, 1, -1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], recuperado: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 4, simulacao_id: 2, original: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], distorcido: [1, 1, -1, 1, 1, 1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, -1, 1, -1, -1, -1, 1, 1, 1, 1, -1, -1, -1, 1, -1, -1, -1, 1, 1], recuperado: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], iteracoes: 2, convergido: true, sucesso: true },
+                { padrao_id: 4, simulacao_id: 3, original: [1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, -1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1, -1, -1, -1, 1, 1], distorcido: [1, 1, -1, 1, 1, 1, 1, -1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, -1, 1, 1, 1, -1, -1, 1, -1, 1, 1, 1, 1, -1, -1, -1, -1, 1, -1, 1, -1, 1, 1, -1, -1, -1, 1, 1], recuperado: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, -1.0, -1.0, -1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0], iteracoes: 3, convergido: true, sucesso: false }
+            ];
+
+            // 1. Inicialização dos pesos no cliente
+            const HOPFIELD_PATTERNS = {
+                1: [-1, -1,  1,  1, -1, -1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1],
+                2: [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+                3: [ 1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1],
+                4: [ 1,  1, -1,  1,  1,  1,  1, -1,  1,  1,  1,  1, -1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1, -1, -1, -1,  1,  1]
+            };
+
+            const HOPFIELD_W = [];
+            const HOPFIELD_N = 45;
+
+            function hopfieldInitWeights() {
+                for (let i = 0; i < HOPFIELD_N; i++) {
+                    HOPFIELD_W[i] = new Array(HOPFIELD_N).fill(0);
+                }
+                for (let i = 0; i < HOPFIELD_N; i++) {
+                    for (let j = 0; j < HOPFIELD_N; j++) {
+                        if (i !== j) {
+                            let sum = 0;
+                            for (let p in HOPFIELD_PATTERNS) {
+                                sum += HOPFIELD_PATTERNS[p][i] * HOPFIELD_PATTERNS[p][j];
+                            }
+                            HOPFIELD_W[i][j] = sum;
+                        } else {
+                            HOPFIELD_W[i][j] = 0;
+                        }
+                    }
+                }
+            }
+
+            let hopfield_state = new Array(HOPFIELD_N).fill(-1);
+            let hopfield_running = false;
+
+            function hopfieldLoadPreset(id) {
+                if (hopfield_running) return;
+                hopfield_state = [...HOPFIELD_PATTERNS[id]];
+                hopfieldUpdateUI();
+                document.getElementById("hopfield-status").innerText = `Padrão ${id} original carregado.`;
+            }
+
+            function hopfieldClearGrid() {
+                if (hopfield_running) return;
+                hopfield_state = new Array(HOPFIELD_N).fill(-1);
+                hopfieldUpdateUI();
+                document.getElementById("hopfield-status").innerText = "Grade limpa.";
+            }
+
+            function hopfieldAddSimulatedNoise() {
+                if (hopfield_running) return;
+                let indices = Array.from({length: HOPFIELD_N}, (_, i) => i);
+                for (let i = indices.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [indices[i], indices[j]] = [indices[j], indices[i]];
+                }
+                for (let i = 0; i < 9; i++) {
+                    const idx = indices[i];
+                    hopfield_state[idx] = -hopfield_state[idx];
+                }
+                hopfieldUpdateUI();
+                document.getElementById("hopfield-status").innerText = "Adicionados 20% (9 pixels) de ruído aleatório.";
+            }
+
+            function hopfieldUpdateUI() {
+                const grid = document.getElementById("hopfield-simulator-grid");
+                if (!grid) return;
+                grid.innerHTML = "";
+                for (let i = 0; i < HOPFIELD_N; i++) {
+                    const cell = document.createElement("div");
+                    cell.className = "hopfield-cell" + (hopfield_state[i] === 1 ? " active" : "");
+                    cell.onclick = () => {
+                        if (hopfield_running) return;
+                        hopfield_state[i] = -hopfield_state[i];
+                        hopfieldUpdateUI();
+                        document.getElementById("hopfield-status").innerText = "Estado alterado manualmente.";
+                    };
+                    grid.appendChild(cell);
+                }
+            }
+
+            async function hopfieldRunRecovery() {
+                if (hopfield_running) return;
+                hopfield_running = true;
+                hopfieldSetControls(true);
+                
+                const statusBox = document.getElementById("hopfield-status");
+                const grid = document.getElementById("hopfield-simulator-grid");
+                grid.style.boxShadow = "0 0 20px rgba(59, 130, 246, 0.4)";
+                
+                const max_epochs = 10;
+                let converged = false;
+                let step_count = 0;
+                
+                for (let epoch = 0; epoch < max_epochs; epoch++) {
+                    statusBox.innerText = `Processando época ${epoch + 1}...`;
+                    let old_state = [...hopfield_state];
+                    let order = Array.from({length: HOPFIELD_N}, (_, i) => i);
+                    
+                    // Atualização assíncrona (ordem aleatória)
+                    for (let i = order.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [order[i], order[j]] = [order[j], order[i]];
+                    }
+                    
+                    for (let idx of order) {
+                        let sum = 0;
+                        for (let j = 0; j < HOPFIELD_N; j++) {
+                            sum += HOPFIELD_W[idx][j] * hopfield_state[j];
+                        }
+                        
+                        let old_val = hopfield_state[idx];
+                        if (sum > 0) {
+                            hopfield_state[idx] = 1;
+                        } else if (sum < 0) {
+                            hopfield_state[idx] = -1;
+                        }
+                        
+                        if (old_val !== hopfield_state[idx]) {
+                            hopfieldUpdateUI();
+                            step_count++;
+                            // Pequena pausa para efeito de visualização de propagação se houver mudança
+                            await new Promise(r => setTimeout(r, 12));
+                        }
+                    }
+                    
+                    // Verificar se o estado inteiro se estabilizou
+                    let diff = false;
+                    for (let i = 0; i < HOPFIELD_N; i++) {
+                        if (hopfield_state[i] !== old_state[i]) {
+                            diff = true;
+                            break;
+                        }
+                    }
+                    if (!diff) {
+                        converged = true;
+                        break;
+                    }
+                }
+                
+                let matching_id = null;
+                for (let p_id in HOPFIELD_PATTERNS) {
+                    let match = true;
+                    for (let i = 0; i < HOPFIELD_N; i++) {
+                        if (hopfield_state[i] !== HOPFIELD_PATTERNS[p_id][i]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                    if (match) {
+                        matching_id = p_id;
+                        break;
+                    }
+                }
+                
+                if (matching_id) {
+                    statusBox.innerHTML = `<span style="color: var(--success); font-weight:bold;">Convergência atingida! Identificado: Dígito ${matching_id}</span>`;
+                    grid.style.boxShadow = "0 0 25px rgba(16, 185, 129, 0.6)";
+                } else {
+                    statusBox.innerHTML = `<span style="color: var(--danger); font-weight:bold;">Convergência atingida para Estado Espúrio!</span>`;
+                    grid.style.boxShadow = "0 0 25px rgba(239, 68, 68, 0.6)";
+                }
+                
+                setTimeout(() => { grid.style.boxShadow = "none"; }, 1500);
+                hopfield_running = false;
+                hopfieldSetControls(false);
+            }
+
+            function hopfieldSetControls(disabled) {
+                const btns = document.querySelectorAll(".hopfield-btn");
+                btns.forEach(btn => btn.disabled = disabled);
+            }
+
+            function hopfieldLoadSimulation(simIndex) {
+                if (hopfield_running) return;
+                const sim = HOPFIELD_SIMULATIONS[simIndex];
+                hopfield_state = [...sim.distorcido];
+                hopfieldUpdateUI();
+                document.getElementById("hopfield-status").innerText = `Imagem ruidosa do Teste ${simIndex + 1} (Dígito ${sim.padrao_id}, Simulação ${sim.simulacao_id}) carregada.`;
+                // Rolar até a grade de forma suave
+                document.getElementById("hopfield-simulator-grid").scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Inicialização dinâmica dos componentes visuais de Hopfield
+            function hopfieldInitDashboard() {
+                hopfieldInitWeights();
+                hopfieldUpdateUI();
+
+                // 1. Renderizar os padrões de visualização na barra lateral
+                const previewContainer = document.getElementById("hopfield-preview-container");
+                if (previewContainer) {
+                    previewContainer.innerHTML = "";
+                    for (let p_id = 1; p_id <= 4; p_id++) {
+                        const pat = HOPFIELD_PATTERNS[p_id];
+                        const card = document.createElement("div");
+                        card.className = "hopfield-pattern-card";
+                        card.onclick = () => hopfieldLoadPreset(p_id);
+                        
+                        const title = document.createElement("div");
+                        title.className = "hopfield-grid-title";
+                        title.innerText = `Dígito ${p_id}`;
+                        card.appendChild(title);
+
+                        const smallGrid = document.createElement("div");
+                        smallGrid.className = "hopfield-small-grid";
+                        for (let i = 0; i < HOPFIELD_N; i++) {
+                            const cell = document.createElement("div");
+                            cell.className = "hopfield-small-cell" + (pat[i] === 1 ? " active" : "");
+                            smallGrid.appendChild(cell);
+                        }
+                        card.appendChild(smallGrid);
+                        previewContainer.appendChild(card);
+                    }
+                }
+
+                // 2. Renderizar a tabela das 12 simulações
+                const tableBody = document.getElementById("hopfield-simulations-table-body");
+                if (tableBody) {
+                    tableBody.innerHTML = "";
+                    HOPFIELD_SIMULATIONS.forEach((sim, idx) => {
+                        const row = document.createElement("tr");
+                        row.style.cursor = "pointer";
+                        row.title = "Clique para testar esta configuração no simulador!";
+                        row.onclick = () => hopfieldLoadSimulation(idx);
+                        
+                        // Contar diferenças para rotular os pixels ruidosos (quantos diferem do original)
+                        let diff_count = 0;
+                        for(let i=0; i<HOPFIELD_N; i++) {
+                            if (sim.original[i] !== sim.distorcido[i]) diff_count++;
+                        }
+                        
+                        const statusClass = sim.sucesso ? "class-c2" : "class-c1";
+                        const statusText = sim.sucesso ? "Sucesso (Recuperado)" : "Falha (Estado Espúrio / Outro)";
+
+                        row.innerHTML = `
+                            <td><strong>${idx + 1}</strong></td>
+                            <td>Dígito ${sim.padrao_id}</td>
+                            <td>Teste ${sim.simulacao_id}</td>
+                            <td>${diff_count} pixels (20%)</td>
+                            <td>${sim.iteracoes}</td>
+                            <td>${sim.convergido ? "Sim" : "Não"}</td>
+                            <td class="${statusClass}">${statusText}</td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+            }
+
+            // Registrar inicializador do Hopfield
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", hopfieldInitDashboard);
+            } else {
+                hopfieldInitDashboard();
+            }
+        </script>
+    </div>
+
+    <!-- TAB KOHONEN -->
+    <div id="kohonen" class="tab-content">
+        <style>
+            /* Kohonen Specific Styling */
+            .kohonen-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 2rem;
+            }
+
+            @media (max-width: 900px) {
+                .kohonen-container {
+                    grid-template-columns: 1fr;
+                }
+            }
+
+            .som-grid-container {
+                background: rgba(0, 0, 0, 0.2);
+                padding: 1.5rem;
+                border-radius: 1rem;
+                border: 1px solid var(--glass-border);
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .som-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 60px);
+                grid-gap: 8px;
+                justify-content: center;
+                margin: 1.5rem auto;
+                background: #0b0f19;
+                padding: 15px;
+                border-radius: 12px;
+                width: fit-content;
+                box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);
+            }
+
+            .som-cell {
+                width: 60px;
+                height: 60px;
+                border-radius: 8px;
+                border: 2px solid rgba(255, 255, 255, 0.05);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-weight: bold;
+                font-size: 0.8rem;
+                color: #fff;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                position: relative;
+            }
+
+            .som-cell.class-A {
+                background: linear-gradient(135deg, #ef4444, #991b1b); /* Vermelho */
+                border-color: rgba(239, 68, 68, 0.3);
+            }
+
+            .som-cell.class-B {
+                background: linear-gradient(135deg, #3b82f6, #1e3a8a); /* Azul */
+                border-color: rgba(59, 130, 246, 0.3);
+            }
+
+            .som-cell.class-C {
+                background: linear-gradient(135deg, #10b981, #065f46); /* Verde */
+                border-color: rgba(16, 185, 129, 0.3);
+            }
+
+            .som-cell.class-Vazio {
+                background: #1e293b;
+                border-color: rgba(255, 255, 255, 0.03);
+                color: var(--text-muted);
+            }
+
+            .som-cell.winner {
+                transform: scale(1.12);
+                border-color: #fff;
+                box-shadow: 0 0 25px #fff, 0 0 10px currentColor;
+                z-index: 10;
+            }
+
+            .som-cell .coord {
+                font-size: 0.6rem;
+                opacity: 0.6;
+                font-weight: normal;
+                margin-top: 2px;
+            }
+
+            .som-legend {
+                display: flex;
+                gap: 1rem;
+                justify-content: center;
+                flex-wrap: wrap;
+                margin-top: 1rem;
+                font-size: 0.85rem;
+            }
+
+            .som-legend-item {
+                display: flex;
+                align-items: center;
+                gap: 0.4rem;
+            }
+
+            .som-legend-box {
+                width: 14px;
+                height: 14px;
+                border-radius: 3px;
+            }
+
+            .slider-group {
+                width: 100%;
+                margin-bottom: 1.2rem;
+            }
+
+            .slider-label-container {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.9rem;
+                color: var(--text-main);
+                margin-bottom: 0.4rem;
+            }
+
+            .slider-input {
+                width: 100%;
+                accent-color: var(--accent);
+                background: rgba(255,255,255,0.05);
+                height: 6px;
+                border-radius: 3px;
+                outline: none;
+                transition: background 0.3s;
+            }
+
+            .som-diagnostic-box {
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 8px;
+                border: 1px solid var(--glass-border);
+                padding: 1rem;
+                margin-top: 1.5rem;
+                width: 100%;
+            }
+
+            .som-diagnostic-row {
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.9rem;
+                margin-bottom: 0.4rem;
+            }
+
+            .som-diagnostic-row:last-child {
+                margin-bottom: 0;
+            }
+        </style>
+
+        <div class="grid">
+            <!-- Contexto do Problema Kohonen -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Contexto do Problema (Agrupamento de Imperfeições)</h2>
+                <p class="description">
+                    No processo de fabricação de pneus, compostos de borracha imperfeitos foram avaliados em três grandezas $\{x_1, x_2, x_3\}$. 
+                    Um <strong>Mapa Auto-Organizável de Kohonen (SOM)</strong> com grid bidimensional $4 \times 4$ (16 neurônios) foi treinado em 120 amostras ($\eta=0.001$, raio de vizinhança $R=1$, 5000 épocas) para identificar similaridades geométricas no espaço de entrada e agrupar as amostras em classes.
+                </p>
+
+            </div>
+
+            <!-- Simulador Interativo -->
+            <div class="card">
+                <h2>Simulador de Classificação SOM</h2>
+                <p class="description">
+                    Ajuste os valores de entrada $\{x_1, x_2, x_3\}$ nos sliders abaixo. A rede computará instantaneamente a bacia de atração euclidiana para todos os 16 neurônios no grid e destacará o neurônio vencedor (BMU) associando-o à classe predita.
+                </p>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Grandeza $x_1$</span>
+                        <strong id="val-x1">0.5000</strong>
+                    </div>
+                    <input type="range" class="slider-input" id="slide-x1" min="0" max="1" step="0.0001" value="0.5" oninput="somRecalculate()">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Grandeza $x_2$</span>
+                        <strong id="val-x2">0.5000</strong>
+                    </div>
+                    <input type="range" class="slider-input" id="slide-x2" min="0" max="1" step="0.0001" value="0.5" oninput="somRecalculate()">
+                </div>
+
+                <div class="slider-group">
+                    <div class="slider-label-container">
+                        <span>Grandeza $x_3$</span>
+                        <strong id="val-x3">0.5000</strong>
+                    </div>
+                    <input type="range" class="slider-input" id="slide-x3" min="0" max="1" step="0.0001" value="0.5" oninput="somRecalculate()">
+                </div>
+
+                <div class="som-diagnostic-box">
+                    <div class="som-diagnostic-row">
+                        <span>Neurônio Vencedor:</span>
+                        <strong id="diag-neuron">-</strong>
+                    </div>
+                    <div class="som-diagnostic-row">
+                        <span>Coordenadas no Grid (r, c):</span>
+                        <strong id="diag-coords">-</strong>
+                    </div>
+                    <div class="som-diagnostic-row">
+                        <span>Classe Predita:</span>
+                        <strong id="diag-class">-</strong>
+                    </div>
+                    <div class="som-diagnostic-row">
+                        <span>Distância Euclidiana ($d$):</span>
+                        <strong id="diag-dist">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Grid de Visualização -->
+            <div class="card">
+                <h2>Grid Topológico 2D de Kohonen</h2>
+                <p class="description">
+                    Representação gráfica do grid $4 \times 4$. A cor de cada célula indica a classe majoritária associada ao neurônio após o treinamento (Amostras 1-20 para A, 21-60 para B, e 61-120 para C). Células cinzas são neurônios inativos/vazios.
+                </p>
+
+                <div class="som-grid-container">
+                    <div class="som-grid" id="som-grid-element"></div>
+                    
+                    <div class="som-legend">
+                        <div class="som-legend-item">
+                            <div class="som-legend-box" style="background: linear-gradient(135deg, #ef4444, #991b1b)"></div>
+                            <span>Classe A (1-20)</span>
+                        </div>
+                        <div class="som-legend-item">
+                            <div class="som-legend-box" style="background: linear-gradient(135deg, #3b82f6, #1e3a8a)"></div>
+                            <span>Classe B (21-60)</span>
+                        </div>
+                        <div class="som-legend-item">
+                            <div class="som-legend-box" style="background: linear-gradient(135deg, #10b981, #065f46)"></div>
+                            <span>Classe C (61-120)</span>
+                        </div>
+                        <div class="som-legend-item">
+                            <div class="som-legend-box" style="background: #1e293b"></div>
+                            <span>Vazio / Fronteira</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabela de Testes do Exercício -->
+            <div class="card" style="grid-column: 1 / -1; overflow-x: auto;">
+                <h2>Classificação de Novas Amostras de Teste</h2>
+                <p class="description">
+                    Classificação automática das 12 amostras de teste do exercício baseada na rede treinada. 
+                    <strong style="color: var(--accent);">Dica:</strong> Clique em qualquer linha da tabela para carregar as grandezas no simulador em tempo real e destacar seu neurônio vencedor!
+                </p>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Amostra</th>
+                                <th>Grandeza $x_1$</th>
+                                <th>Grandeza $x_2$</th>
+                                <th>Grandeza $x_3$</th>
+                                <th>Neurônio Vencedor (1-16)</th>
+                                <th>Classe Mapeada</th>
+                            </tr>
+                        </thead>
+                        <tbody id="som-test-table-body"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Demonstração Matemática -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>Demonstração Matemática (Regra de Kohonen)</h2>
+                <div class="answer-block">
+                    <h3>Minimização do Erro Quadrático da Distância Euclidiana</h3>
+                    <p style="background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: 0.5rem; border-left: 4px solid var(--accent); color: var(--text-muted); text-align: justify; line-height: 1.7;">
+                        Deseja-se provar que a regra de alteração de pesos baseada na norma euclidiana é obtida a partir da minimização da função do erro quadrático da distância entre o padrão de entrada $x$ e o vetor de pesos $w_j$ do neurônio vencedor $j$:
+                        $$E = \frac{1}{2} \|x - w_j\|^2 = \frac{1}{2} \sum_{i=1}^{d} (x_i - w_{ji})^2$$
+                        Onde $d$ é a dimensão do espaço de entrada (aqui $d=3$). Para atualizar o vetor de pesos $w_j$ de forma a minimizar o erro $E$, utiliza-se a regra do **Gradiente Descendente**, na qual o ajuste dos pesos se faz na direção oposta ao vetor gradiente de erro:
+                        $$w_j(t+1) = w_j(t) - \eta \cdot \nabla_{w_j} E$$
+                        Calculando a derivada parcial da função de erro $E$ em relação a cada peso sináptico individual $w_{ji}$:
+                        $$\frac{\partial E}{\partial w_{ji}} = \frac{\partial}{\partial w_{ji}} \left[ \frac{1}{2} \sum_{k=1}^{d} (x_k - w_{jk})^2 \right]$$
+                        Aplicando a regra da cadeia e derivando para a componente $k = i$:
+                        $$\frac{\partial E}{\partial w_{ji}} = \frac{1}{2} \cdot 2 \cdot (x_i - w_{ji}) \cdot \frac{\partial}{\partial w_{ji}} (x_i - w_{ji})$$
+                        $$\frac{\partial E}{\partial w_{ji}} = (x_i - w_{ji}) \cdot (-1) = -(x_i - w_{ji})$$
+                        Portanto, o vetor gradiente completo de erro em relação ao vetor de pesos $w_j$ do vencedor é:
+                        $$\nabla_{w_j} E = -(x - w_j)$$
+                        Substituindo este gradiente na equação de atualização dos pesos:
+                        $$w_j(t+1) = w_j(t) - \eta \cdot \left[ -(x - w_j(t)) \right]$$
+                        $$w_j(t+1) = w_j(t) + \eta \cdot (x - w_j(t))$$
+                        Esta é exatamente a regra de atualização clássica de pesos de Kohonen para o neurônio vencedor! Q.E.D.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Pesos e dados de Kohonen exportados do script Python
+            const SOM_DATA = {
+                "weights": [
+                    [
+                        [0.5164543028748604, 0.7753077655225491, 0.5397396922171173],
+                        [0.5406877572008235, 0.7080903684836014, 0.567597378219002],
+                        [0.7097659695700306, 0.33477221714038014, 0.7175014613595567],
+                        [0.7493076933713788, 0.2521134568034965, 0.7517178535044754]
+                    ],
+                    [
+                        [0.5067154685459612, 0.7631438362057447, 0.5227060213953938],
+                        [0.5264941841105769, 0.7127943382202575, 0.5461238342546462],
+                        [0.6877792559430161, 0.37403795301401654, 0.6931918443035967],
+                        [0.7493076933713787, 0.2521134568034965, 0.7517178535044753]
+                    ],
+                    [
+                        [0.5029968721303765, 0.7375533179041875, 0.4769412819269262],
+                        [0.510760613827385, 0.7189789922323032, 0.4860720075147405],
+                        [0.46660583799300015, 0.3323668038810389, 0.4351176891332806],
+                        [0.4574788318852892, 0.23843957971190363, 0.4162286473383607]
+                    ],
+                    [
+                        [0.51808368127434, 0.7160990587389828, 0.45362591738667446],
+                        [0.51808368127434, 0.7160990587389828, 0.45362591738667446],
+                        [0.3134034100948854, 0.35416365717871684, 0.2585882374367727],
+                        [0.2557372056423032, 0.2519298333509152, 0.18870082841898672]
+                    ]
+                ],
+                "neuron_classes": {
+                    "0,0": "C", "0,1": "C", "0,2": "B", "0,3": "B",
+                    "1,0": "C", "1,1": "C", "1,2": "B", "1,3": "B",
+                    "2,0": "C", "2,1": "C", "2,2": "Vazio", "2,3": "Vazio",
+                    "3,0": "C", "3,1": "Vazio", "3,2": "Vazio", "3,3": "A"
+                },
+                "simulations": [
+                    { "amostra": 1, "x": [0.2471, 0.1778, 0.2905], "winner_neuron": 16, "winner_coords": [3, 3], "classe": "A" },
+                    { "amostra": 2, "x": [0.8240, 0.2223, 0.7041], "winner_neuron": 4, "winner_coords": [0, 3], "classe": "B" },
+                    { "amostra": 3, "x": [0.4960, 0.7231, 0.5866], "winner_neuron": 2, "winner_coords": [0, 1], "classe": "C" },
+                    { "amostra": 4, "x": [0.2923, 0.2041, 0.2234], "winner_neuron": 16, "winner_coords": [3, 3], "classe": "A" },
+                    { "amostra": 5, "x": [0.8118, 0.2668, 0.7484], "winner_neuron": 4, "winner_coords": [0, 3], "classe": "B" },
+                    { "amostra": 6, "x": [0.4837, 0.8200, 0.4792], "winner_neuron": 5, "winner_coords": [1, 0], "classe": "C" },
+                    { "amostra": 7, "x": [0.3248, 0.2629, 0.2375], "winner_neuron": 16, "winner_coords": [3, 3], "classe": "A" },
+                    { "amostra": 8, "x": [0.7209, 0.2116, 0.7821], "winner_neuron": 4, "winner_coords": [0, 3], "classe": "B" },
+                    { "amostra": 9, "x": [0.5259, 0.6522, 0.5957], "winner_neuron": 2, "winner_coords": [0, 1], "classe": "C" },
+                    { "amostra": 10, "x": [0.2075, 0.1669, 0.1745], "winner_neuron": 16, "winner_coords": [3, 3], "classe": "A" },
+                    { "amostra": 11, "x": [0.7830, 0.3171, 0.7888], "winner_neuron": 4, "winner_coords": [0, 3], "classe": "B" },
+                    { "amostra": 12, "x": [0.5393, 0.7510, 0.5682], "winner_neuron": 2, "winner_coords": [0, 1], "classe": "C" }
+                ]
+            };
+
+            function somInit() {
+                // 1. Inicializar Grid de Kohonen
+                const gridElement = document.getElementById("som-grid-element");
+                if (gridElement) {
+                    gridElement.innerHTML = "";
+                    for (let r = 0; r < 4; r++) {
+                        for (let c = 0; c < 4; c++) {
+                            const neuronId = r * 4 + c + 1;
+                            const cl = SOM_DATA.neuron_classes[`${r},${c}`];
+                            
+                            const cell = document.createElement("div");
+                            cell.className = `som-cell class-${cl}`;
+                            cell.id = `som-cell-${r}-${c}`;
+                            
+                            const label = document.createElement("span");
+                            label.innerText = `N${neuronId}`;
+                            cell.appendChild(label);
+
+                            const coord = document.createElement("span");
+                            coord.className = "coord";
+                            coord.innerText = `(${r},${c})`;
+                            cell.appendChild(coord);
+
+                            gridElement.appendChild(cell);
+                        }
+                    }
+                }
+
+                // 2. Inicializar tabela de testes
+                const tableBody = document.getElementById("som-test-table-body");
+                if (tableBody) {
+                    tableBody.innerHTML = "";
+                    SOM_DATA.simulations.forEach((sim) => {
+                        const row = document.createElement("tr");
+                        row.style.cursor = "pointer";
+                        row.onclick = () => somLoadTest(sim.x[0], sim.x[1], sim.x[2]);
+                        row.innerHTML = `
+                            <td><strong>${sim.amostra}</strong></td>
+                            <td>${sim.x[0].toFixed(4)}</td>
+                            <td>${sim.x[1].toFixed(4)}</td>
+                            <td>${sim.x[2].toFixed(4)}</td>
+                            <td>${sim.winner_neuron} <span style="font-size:0.8em; color:var(--text-muted);">(${sim.winner_coords[0]},${sim.winner_coords[1]})</span></td>
+                            <td><span class="class-${sim.classe === 'A' ? 'c1' : sim.classe === 'B' ? 'c2' : 'c2'}" style="color: ${sim.classe === 'A' ? 'var(--danger)' : sim.classe === 'B' ? 'var(--accent)' : 'var(--success)'}; font-weight:bold;">Classe ${sim.classe}</span></td>
+                        `;
+                        tableBody.appendChild(row);
+                    });
+                }
+
+                // 3. Executar cálculo padrão inicial
+                somRecalculate();
+            }
+
+            function somRecalculate() {
+                const x1 = parseFloat(document.getElementById("slide-x1").value);
+                const x2 = parseFloat(document.getElementById("slide-x2").value);
+                const x3 = parseFloat(document.getElementById("slide-x3").value);
+
+                document.getElementById("val-x1").innerText = x1.toFixed(4);
+                document.getElementById("val-x2").innerText = x2.toFixed(4);
+                document.getElementById("val-x3").innerText = x3.toFixed(4);
+
+                // Remover destaque anterior do vencedor
+                document.querySelectorAll(".som-cell").forEach(cell => cell.classList.remove("winner"));
+
+                // Calcular distâncias euclidianas para todos os neurônios
+                let min_dist = Infinity;
+                let winner_r = 0;
+                let winner_c = 0;
+
+                for (let r = 0; r < 4; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        const w = SOM_DATA.weights[r][c];
+                        const dist = Math.sqrt(
+                            Math.pow(x1 - w[0], 2) +
+                            Math.pow(x2 - w[1], 2) +
+                            Math.pow(x3 - w[2], 2)
+                        );
+                        if (dist < min_dist) {
+                            min_dist = dist;
+                            winner_r = r;
+                            winner_c = c;
+                        }
+                    }
+                }
+
+                // Destacar o vencedor
+                const winnerCell = document.getElementById(`som-cell-${winner_r}-${winner_c}`);
+                if (winnerCell) {
+                    winnerCell.classList.add("winner");
+                }
+
+                // Atualizar diagnóstico
+                const winnerNum = winner_r * 4 + winner_c + 1;
+                let predClass = SOM_DATA.neuron_classes[`${winner_r},${winner_c}`];
+
+                // Tratar se for neurônio vazio por proximidade média
+                if (predClass === "Vazio") {
+                    let minClassDist = Infinity;
+                    let bestClass = "Vazio";
+                    const classes = ["A", "B", "C"];
+                    
+                    classes.forEach(cName => {
+                        let sumD = 0;
+                        let count = 0;
+                        for (let r = 0; r < 4; r++) {
+                            for (let c = 0; c < 4; c++) {
+                                if (SOM_DATA.neuron_classes[`${r},${c}`] === cName) {
+                                    const w = SOM_DATA.weights[r][c];
+                                    sumD += Math.sqrt(Math.pow(x1 - w[0],2) + Math.pow(x2 - w[1],2) + Math.pow(x3 - w[2],2));
+                                    count++;
+                                }
+                            }
+                        }
+                        if (count > 0) {
+                            const avgD = sumD / count;
+                            if (avgD < minClassDist) {
+                                minClassDist = avgD;
+                                bestClass = cName;
+                            }
+                        }
+                    });
+                    predClass = bestClass + " (Via Proximidade)";
+                }
+
+                document.getElementById("diag-neuron").innerText = `Neurônio ${winnerNum}`;
+                document.getElementById("diag-coords").innerText = `(${winner_r}, ${winner_c})`;
+                
+                const classLabel = document.getElementById("diag-class");
+                classLabel.innerText = `Classe ${predClass}`;
+                if (predClass.startsWith("A")) {
+                    classLabel.style.color = "var(--danger)";
+                } else if (predClass.startsWith("B")) {
+                    classLabel.style.color = "var(--accent)";
+                } else {
+                    classLabel.style.color = "var(--success)";
+                }
+
+                document.getElementById("diag-dist").innerText = min_dist.toFixed(6);
+            }
+
+            function somLoadTest(x1, x2, x3) {
+                document.getElementById("slide-x1").value = x1;
+                document.getElementById("slide-x2").value = x2;
+                document.getElementById("slide-x3").value = x3;
+                somRecalculate();
+                // Rolar até o simulador de forma suave
+                document.getElementById("slide-x1").scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            // Registrar inicializador do Kohonen
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", somInit);
+            } else {
+                somInit();
+            }
+        </script>
     </div>
 
 </div>
