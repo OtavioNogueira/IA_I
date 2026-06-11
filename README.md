@@ -22,6 +22,10 @@ O projeto está estruturado em tópicos evolutivos de aprendizado de máquina:
     *   Rede neural recorrente de camada única configurada como memória associativa para armazenar e recuperar padrões de dígitos ruidosos de 45 bits.
 *   **[Mapas Auto-Organizáveis de Kohonen (SOM)](file:///c:/Users/Ot%C3%A1vio%20Nogueira/Desktop/IA_I/Kohonen)**
     *   Rede neural de aprendizado não supervisionado estruturada em um grid topológico bidimensional de $4 \times 4$ para agrupamento e análise de similaridades em dados de imperfeições de pneus.
+*   **[Teoria da Ressonância Adaptativa (ART-1)](file:///c:/Users/Ot%C3%A1vio/IA_I/ART)**
+    *   Implementação da rede neural auto-organizada ART-1 para agrupamento de situações de status de processos industriais sob múltiplos graus de vigilância.
+*   **[Quantização Vetorial por Aprendizado (LVQ)](file:///c:/Users/Ot%C3%A1vio/IA_I/LVQ)**
+    *   Algoritmo supervisionado de quantização vetorial por aprendizado (LVQ-1) treinado para traçar perfis e realizar predição de potência elétrica diária.
 
 ---
 
