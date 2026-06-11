@@ -2,7 +2,7 @@
 
 ## Contexto do Problema
 A partir da análise de um processo de destilação fracionada de petróleo observou-se que determinado óleo poderia ser classificado em duas classes de pureza {C1 e C2} a partir da medição de três grandezas {x1, x2 e x3} que representam propriedades físico-químicas.
-A classificação é feita com um **Perceptron** usando a regra de Hebb (aprendizado supervisionado) com taxa de aprendizagem $\eta = 0.01$, inicializando os pesos com valores aleatórios entre 0 e 1.
+A classificação é feita com um **Perceptron** usando a regra de aprendizado do Perceptron (baseada em erro / aprendizado supervisionado) com taxa de aprendizagem $\eta = 0.01$, inicializando os pesos com valores aleatórios entre 0 e 1.
 
 ## 1 e 2. Treinamentos Realizados
 Foram executados 5 treinamentos independentes até o erro chegar a zero na base de dados de treinamento. Em cada execução, os pesos iniciais foram gerados aleatoriamente entre 0 e 1.

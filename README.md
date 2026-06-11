@@ -11,7 +11,7 @@ O objetivo do projeto é implementar e analisar algoritmos clássicos de Redes N
 O projeto está estruturado em tópicos evolutivos de aprendizado de máquina:
 
 *   **[Perceptron](file:///c:/Users/Ot%C3%A1vio%20Nogueira/Desktop/IA_I/perceptron)**
-    *   Implementação clássica do classificador linear de camada única utilizando a Regra de Aprendizagem de Hebb para separação de classes de pureza de óleo.
+    *   Implementação clássica do classificador linear de camada única utilizando a Regra de Aprendizagem do Perceptron (baseada em erro) para separação de classes de pureza de óleo.
 *   **[Adaline](file:///c:/Users/Ot%C3%A1vio%20Nogueira/Desktop/IA_I/adaline)**
     *   Rede neural de camada única com algoritmo de aprendizado baseado na regra Delta (LMS - Least Mean Squares) voltada para convergência por minimização do erro quadrático médio.
 *   **[Perceptron Multicamadas (PMC / MLP)](file:///c:/Users/Ot%C3%A1vio%20Nogueira/Desktop/IA_I/PMC)**

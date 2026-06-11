@@ -190,7 +190,10 @@ print("Gráfico comparativo salvo como 'grafico_eqm_pmc2.png'.")
 print("\n--- VALIDAÇÃO COM CONJUNTO DE TESTE ---")
 
 def pos_processamento(y_real):
-    return [round(y) for y in y_real]
+    # Arredondamento simétrico (round half away from zero)
+    def round_symmetric(x):
+        return int(x + 0.5) if x >= 0 else int(x - 0.5)
+    return [round_symmetric(y) for y in y_real]
 
 acertos = 0
 resultados_teste = []
